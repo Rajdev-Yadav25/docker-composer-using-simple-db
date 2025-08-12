@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>People App (Simple)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+    h1 { margin-top: 0; }
+    form, table { max-width: 520px; }
+    label { display:block; margin:8px 0 4px; }
+    input, select, button { padding:8px; width:100%; box-sizing:border-box; }
+    button { margin-top:12px; cursor:pointer; }
+    table { border-collapse: collapse; width:100%; margin-top:24px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+    th { background:#f2f2f2; }
+    .msg { margin-top:12px; }
+    .error { color:#b00020; }
+    .ok { color:#0a7b34; }
+  </style>
+</head>
+<body>
+  <h1><u><b>People Registry</b></u></h1>
+
+  <form id="personForm">
+    <label for="name"><b>Name</b></label>
+    <input id="name" name="name" required>
+
+    <label for="age"><b>Age</b></label>
+    <input id="age" name="age" type="number" min="1" required>
+
+    <label for="gender"><b>Gender</b></label>
+    <select id="gender" name="gender" required>
+      <option value="">-- Select --</option>
+      <option>Male</option>
+      <option>Female</option>
+      <option>Other</option>
+    </select>
+
+    <label for="contact"><b>Contact Number</b></label>
+    <input id="contact" name="contact" placeholder="+91-XXXXXXXXXX" required>
+
+    <button type="submit"><b>Save Person</b></button>
+    <div id="msg" class="msg"></div>
+  </form>
+
+  <h2><i><u>Saved People</u></i></h2>
+  <table id="peopleTable">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Contact</th><th>Created</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+  const form = document.getElementById('personForm');
+  const msg = document.getElementById('msg');
+  const tbody = document.querySelector('#peopleTable tbody');
+
+  async function loadPeople() {
+    tbody.innerHTML = '';
+    try {
+      const res = await fetch('/api/people');
+      const data = await res.json();
+      data.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td>${p.name}</td>
+          <td>${p.age}</td>
+          <td>${p.gender}</td>
+          <td>${p.contact}</td>
+          <td>${new Date(p.created_at).toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    msg.textContent = '';
+    msg.className = 'msg';
+
+    const payload = {
+      name: document.getElementById('name').value.trim(),
+      age: Number(document.getElementById('age').value),
+      gender: document.getElementById('gender').value,
+      contact: document.getElementById('contact').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/people', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        msg.textContent = data.error || 'Failed to save.';
+        msg.classList.add('error');
+      } else {
+        msg.textContent = 'Saved successfully.';
+        msg.classList.add('ok');
+        form.reset();
+        loadPeople();
+      }
+    } catch (e) {
+      msg.textContent = 'Network error.';
+      msg.classList.add('error');
+    }
+  });
+
+  loadPeople();
+</script>
+</body>
+</html>
