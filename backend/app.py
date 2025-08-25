@@ -44,7 +44,7 @@ def create_person():
 
 @app.get("/api/people")
 def list_people():
-    sql = text("SELECT id, name, age, gender, contact, created_at FROM person ORDER BY id")
+    sql = text("SELECT id, name, age, gender, contact, created_at FROM person ORDER BY id DESC")
     with engine.connect() as conn:
         rows = conn.execute(sql).mappings().all()
     return jsonify(list(rows)), 200
